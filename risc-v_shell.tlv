@@ -42,15 +42,28 @@
    
    $reset = *reset;
    
+   //program counter
+   $pc[31:0] = >>1$next_pc[31:0];
+   $next_pc[31:0] = $reset ? 32'b0 : $pc +4;
    
-   // YOUR CODE HERE
-   // ...
+   // instruction memory
+   `READONLY_MEM($pc, $$instr[31:0]);
+   
+   // decode logic instruction type
+   $is_u_instr = $instr[6:2] == 5'b00101 || $instr[6:2] == 5'b01101;
+   $is_i_instr = $instr[6:2] ==? 5'b0000x || $instr[6:2] == 5'b00101 || $instr[6:2] == 5'b00110 || $instr[6:2] == 5'b11001;
+   $is_r_instr = $instr[6:2] == 5'b01011 || $instr[6:2] == 5'b01100 || $instr[6:2] == 5'b01110 || $instr[6:2] == 5'b10100;
+   $is_s_instr = $instr[6:2] ==? 5'b0100x;
+   $is_b_instr = $instr[6:2] == 5'b11000;
+   $is_j_instr = $instr[6:2] == 5'b11011;
+   
+   // decode logic instruction fields 
+   
    
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
-   
    //m4+rf(32, 32, $reset, $wr_en, $wr_index[4:0], $wr_data[31:0], $rd_en1, $rd_index1[4:0], $rd_data1, $rd_en2, $rd_index2[4:0], $rd_data2)
    //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
    m4+cpu_viz()
