@@ -51,15 +51,37 @@
    
    // decode logic instruction type
    $is_u_instr = $instr[6:2] == 5'b00101 || $instr[6:2] == 5'b01101;
-   $is_i_instr = $instr[6:2] ==? 5'b0000x || $instr[6:2] == 5'b00101 || $instr[6:2] == 5'b00110 || $instr[6:2] == 5'b11001;
+   $is_i_instr =
+    $instr[6:2] ==? 5'b0000x ||
+    $instr[6:2] == 5'b00100 ||
+    $instr[6:2] == 5'b00110 ||
+    $instr[6:2] == 5'b11001;
    $is_r_instr = $instr[6:2] == 5'b01011 || $instr[6:2] == 5'b01100 || $instr[6:2] == 5'b01110 || $instr[6:2] == 5'b10100;
    $is_s_instr = $instr[6:2] ==? 5'b0100x;
    $is_b_instr = $instr[6:2] == 5'b11000;
    $is_j_instr = $instr[6:2] == 5'b11011;
    
    // decode logic instruction fields 
+   $rs2[4:0] = $instr[24:20];
+   $rd[4:0]  = $instr[11:7];
+   $rs1[4:0] = $instr[19:15];
+   $opcode[6:0] = $instr[6:0];
+   $funct3[2:0] = $instr[14:12];
    
-   
+   // checking if the instruction type uses the registers
+   $rs2_valid = $is_r_instr || $is_s_instr || $is_b_instr;
+   $rs1_valid = $is_r_instr || $is_s_instr || $is_b_instr || $is_i_instr;
+   $rd_valid  = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
+   $funct3_valid = $is_r_instr || $is_s_instr || $is_b_instr || $is_i_instr;
+   $imm_valid = $is_u_instr || $is_s_instr || $is_b_instr || $is_i_instr || $is_j_instr;
+   `BOGUS_USE($rd $rd_valid $rs1 $rs1_valid ...);
+   $imm[31:0] =
+    $is_i_instr ? {{20{$instr[31]}}, $instr[31:20]} :
+    $is_s_instr ? {{20{$instr[31]}}, $instr[31:25], $instr[11:7]} :
+    $is_b_instr ? {{19{$instr[31]}}, $instr[31], $instr[7], $instr[30:25], $instr[11:8], 1'b0} :
+    $is_u_instr ? {$instr[31:12], 12'b0} :
+    $is_j_instr ? {{11{$instr[31]}}, $instr[31], $instr[19:12], $instr[20], $instr[30:21], 1'b0} :
+    32'b0;
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
