@@ -82,11 +82,21 @@
     $is_u_instr ? {$instr[31:12], 12'b0} :
     $is_j_instr ? {{11{$instr[31]}}, $instr[31], $instr[19:12], $instr[20], $instr[30:21], 1'b0} :
     32'b0;
+   $dec_bits[10:0] = {$instr[30],$funct3,$opcode};
+   $is_beq = $dec_bits ==? 11'bx_000_1100011;
+   $is_bne = $dec_bits ==? 11'bx_001_1100011;
+   $is_blt = $dec_bits ==? 11'bx_100_1100011;
+   $is_bge = $dec_bits ==? 11'bx_101_1100011;
+   $is_bltu = $dec_bits ==? 11'bx_110_1100011;
+   $is_bgeu = $dec_bits ==? 11'bx_111_1100011;
+   $is_addi = $dec_bits ==? 11'bx_000_0010011;
+   $is_add = $dec_bits ==? 11'b0_000_0110011;
+   `BOGUS_USE($is_beq $is_bne $is_blt $is_bge $is_bltu $is_bgeu $is_addi $is_add);
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
-   //m4+rf(32, 32, $reset, $wr_en, $wr_index[4:0], $wr_data[31:0], $rd_en1, $rd_index1[4:0], $rd_data1, $rd_en2, $rd_index2[4:0], $rd_data2)
+   m4+rf(32, 32, $reset, $wr_en, $wr_index[4:0], $wr_data[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $scr2_value)
    //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
    m4+cpu_viz()
 \SV
