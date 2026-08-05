@@ -68,7 +68,7 @@
    $rd_valid  = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
    $funct3_valid = $is_r_instr || $is_s_instr || $is_b_instr || $is_i_instr;
    $imm_valid = $is_u_instr || $is_s_instr || $is_b_instr || $is_i_instr || $is_j_instr;
-   `BOGUS_USE($rd $rd_valid $rs1 $rs1_valid);
+   `BOGUS_USE($rd $rd_valid $rs1 $rs1_valid $funct3_valid $imm_valid);
    $imm[31:0] =
     $is_i_instr ? {{20{$instr[31]}}, $instr[31:20]} :
     $is_s_instr ? {{20{$instr[31]}}, $instr[31:25], $instr[11:7]} :
@@ -130,22 +130,31 @@
    $sext_src1[63:0] = {{32{$src1_value[31]}}, $src1_value};
    $sra_rslt[63:0] = $sext_src1 >> $src2_value[4:0];
    $srai_rslt[63:0] = $sext_src1 >> $imm[4:0];
-   $result[31:0] =
-    $is_addi || $is_s_instr || $is_load ? $src1_value + $imm :
-    $is_add  ? $src1_value + $src2_value :
-    $is_ori     ? $src1_value & $imm :
-    $is_xori    ? $src1_value | $imm :
-    $is_slli    ? $src1_value << $imm[5:0] :
-    $is_srli    ? $src1_value >> $imm[5:0] :
-    $is_and     ? $src1_value & $src2_value :
-    $is_or     ? $src1_value | $src2_value :
-    $is_xor     ? $src1_value ^ $src2_value :
-    $is_sub     ? $src1_value - $src2_value :
-    $is_sll     ? $src1_value << $src2_value[4:0] :
-    $is_srl     ? $src1_value >> $src2_value[4:0] :
-    $is_sltu    ? $sltu_rslt:
-    $is_sltiu   ? $sltiu_rslt:
-    32'b0;
+   $result[31:0] = $is_andi ? $src1_value & $imm:
+                   $is_ori ? $src1_value | $imm:
+                   $is_xori ? $src1_value ^ $imm:
+                   $is_addi ? $src1_value + $imm:
+                   $is_slli ? $src1_value << $imm[5:0]:
+                   $is_srli ? $src1_value >> $imm[5:0]:
+                   $is_and ? $src1_value & $src2_value:
+                   $is_or ? $src1_value | $src2_value:
+                   $is_xor ? $src1_value ^ $src2_value:
+                   $is_add ? $src1_value + $src2_value:
+                   $is_sub ? $src1_value - $src2_value:
+                   $is_sll ? $src1_value << $src2_value:
+                   $is_srl ? $src1_value >> $src2_value:
+                   $is_sltu ? $sltu_rslt:
+                   $is_sltiu ? $sltiu_rslt:
+                   $is_lui ? {$imm[31:12], 12'b0}:
+                   $is_auipc ? $pc + {$imm[31:12], 12'b0}:
+                   $is_jal ? $pc + 32'd4:
+                   $is_jalr ? $pc + 32'd4:
+                   $is_slt ? (($src1_value[31] == $src2_value[31]) ? $sltu_rslt : {31'b0, $src1_value[31]}):
+                   $is_slti ? (($src1_value[31] == $imm[31]) ? $sltu_rslt : {31'b0, $src1_value[31]}):
+                   $is_sra ? $sra_rslt[31:0]:
+                   $is_srai ? $srai_rslt[31:0]:
+                   ($is_load || $is_s_instr) ? $src1_value + $imm: // Calculation of effective address in AlU stage for load and store 
+                   32'b0;
    $taken_br =
     $is_beq  ? ($src1_value == $src2_value) :
     $is_bne  ? ($src1_value != $src2_value) :
@@ -159,12 +168,13 @@
    $pc[31:0] = >>1$next_pc[31:0];
    $next_pc[31:0] = $reset ? 32'b0 : $taken_br  ? $br_tgt_pc : $pc + 4;
    
+   $res_mux[31:0] = $is_load ?  $ld_data : $result;
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
    
    m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
-   m4+rf(32, 32, $reset, $rd_valid, $rd[4:0], $result[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
+   m4+rf(32, 32, $reset, $rd_valid, $rd[4:0], $res_mux[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
    m4+dmem(32, 32, $reset, $result[6:2], $is_s_instr, $src2_value, $is_load, $ld_data)
    m4+cpu_viz()
 \SV
