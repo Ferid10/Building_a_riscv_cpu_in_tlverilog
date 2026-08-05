@@ -55,7 +55,9 @@
    $is_s_instr = $instr[6:2] ==? 5'b0100x; // we have this so we dont need additional info for stores
    $is_b_instr = $instr[6:2] == 5'b11000;
    $is_j_instr = $instr[6:2] == 5'b11011;
+   
    // decode logic instruction fields 
+   
    $rs2[4:0] = $instr[24:20];
    $rd[4:0]  = $instr[11:7];
    $rs1[4:0] = $instr[19:15];
@@ -166,8 +168,8 @@
    $br_tgt_pc[31:0] = $pc + $imm;
    //program counter
    $pc[31:0] = >>1$next_pc[31:0];
-   $next_pc[31:0] = $reset ? 32'b0 : $taken_br  ? $br_tgt_pc : $pc + 4;
-   
+   $jalr_tgt_pc = $src1_value + $imm;
+   $next_pc[31:0] = $reset ? 32'b0 : $taken_br  ? $br_tgt_pc : $is_jal ? $br_tgt_pc :$is_jalr ? $jalr_tgt_pc : $pc + 4;
    $res_mux[31:0] = $is_load ?  $ld_data : $result;
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
