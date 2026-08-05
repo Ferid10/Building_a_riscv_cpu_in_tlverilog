@@ -131,22 +131,20 @@
    $sra_rslt[63:0] = $sext_src1 >> $src2_value[4:0];
    $srai_rslt[63:0] = $sext_src1 >> $imm[4:0];
    $result[31:0] =
-    $is_addi ? $src1_value + $imm :
+    $is_addi || $is_s_instr || $is_load ? $src1_value + $imm :
     $is_add  ? $src1_value + $src2_value :
-    $ori     ? $src1_value & $imm :
-    $xori    ? $src1_value | $imm :
-    $slli    ? $src1_value << $imm[5:0] :
-    $srli    ? $src1_value >> $imm[5:0] :
-    $and     ? $src1_value & $src2_value :
-    $and     ? $src1_value | $src2_value :
-    $xor     ? $src1_value ^ $src2_value :
-    $and     ? $src1_value + $src2_value :
-    $sub     ? $src1_value - $src2_value :
-    $sll     ? $src1_value << $src2_value[4:0] :
-    $srl     ? $src1_value >> $src2_value[4:0] :
-    $stlu    ? $stlu_rslt:
-    $sltiu   ? $sltiu_rslt:
-    
+    $is_ori     ? $src1_value & $imm :
+    $is_xori    ? $src1_value | $imm :
+    $is_slli    ? $src1_value << $imm[5:0] :
+    $is_srli    ? $src1_value >> $imm[5:0] :
+    $is_and     ? $src1_value & $src2_value :
+    $is_or     ? $src1_value | $src2_value :
+    $is_xor     ? $src1_value ^ $src2_value :
+    $is_sub     ? $src1_value - $src2_value :
+    $is_sll     ? $src1_value << $src2_value[4:0] :
+    $is_srl     ? $src1_value >> $src2_value[4:0] :
+    $is_sltu    ? $sltu_rslt:
+    $is_sltiu   ? $sltiu_rslt:
     32'b0;
    $taken_br =
     $is_beq  ? ($src1_value == $src2_value) :
@@ -163,10 +161,11 @@
    
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
+   
    m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    m4+rf(32, 32, $reset, $rd_valid, $rd[4:0], $result[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
-   //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
+   m4+dmem(32, 32, $reset, $result[6:2], $is_s_instr, $src2_value, $is_load, $ld_data)
    m4+cpu_viz()
 \SV
    endmodule
