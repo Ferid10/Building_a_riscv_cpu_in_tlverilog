@@ -131,33 +131,22 @@
    $sra_rslt[63:0] = $sext_src1 >> $src2_value[4:0];
    $srai_rslt[63:0] = $sext_src1 >> $imm[4:0];
    $result[31:0] =
-    $is_addi  ? $src1_value + $imm :
-    $is_add   ? $src1_value + $src2_value :
-    $is_ori   ? $src1_value | $imm :
-    $is_xori  ? $src1_value ^ $imm :
-    $is_andi  ? $src1_value & $imm :
-    $is_slli  ? $src1_value << $imm[4:0] :
-    $is_srli  ? $src1_value >> $imm[4:0] :
-    $is_and   ? $src1_value & $src2_value :
-    $is_or    ? $src1_value | $src2_value :
-    $is_xor   ? $src1_value ^ $src2_value :
-    $is_sub   ? $src1_value - $src2_value :
-    $is_sll   ? $src1_value << $src2_value[4:0] :
-    $is_srl   ? $src1_value >> $src2_value[4:0] :
-    $is_sltu  ? $sltu_rslt :
-    $is_sltiu ? $sltiu_rslt :
-    $is_lui   ? {$imm[31:12], 12'b0} :
-    $is_auipc ? $pc + $imm :
-    $is_jal   ? $pc + 32'd4 :
-    $is_jalr  ? $pc + 32'd4 :
-    $is_slt   ? (($src1_value[31] == $src2_value[31]) ?
-                  $sltu_rslt :
-                  {31'b0, $src1_value[31]}) :
-    $is_slti  ? (($src1_value[31] == $imm[31]) ?
-                  $sltiu_rslt :
-                  {31'b0, $src1_value[31]}) :
-    $is_sra   ? $sra_rslt[31:0] :
-    $is_srai  ? $srai_rslt[31:0] :
+    $is_addi ? $src1_value + $imm :
+    $is_add  ? $src1_value + $src2_value :
+    $ori     ? $src1_value & $imm :
+    $xori    ? $src1_value | $imm :
+    $slli    ? $src1_value << $imm[5:0] :
+    $srli    ? $src1_value >> $imm[5:0] :
+    $and     ? $src1_value & $src2_value :
+    $and     ? $src1_value | $src2_value :
+    $xor     ? $src1_value ^ $src2_value :
+    $and     ? $src1_value + $src2_value :
+    $sub     ? $src1_value - $src2_value :
+    $sll     ? $src1_value << $src2_value[4:0] :
+    $srl     ? $src1_value >> $src2_value[4:0] :
+    $stlu    ? $stlu_rslt:
+    $sltiu   ? $sltiu_rslt:
+    
     32'b0;
    $taken_br =
     $is_beq  ? ($src1_value == $src2_value) :
@@ -171,6 +160,7 @@
    //program counter
    $pc[31:0] = >>1$next_pc[31:0];
    $next_pc[31:0] = $reset ? 32'b0 : $taken_br  ? $br_tgt_pc : $pc + 4;
+   
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
    m4+tb()
